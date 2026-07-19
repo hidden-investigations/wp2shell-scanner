@@ -173,7 +173,7 @@ python3 wp2shell-scanner.py -u https://wordpress.example -p
 Run a researcher-supplied command and print only its normalized multiline output:
 
 ```bash
-python3 wp2shell-scanner.py --url http://localhost:3000 -p --command "ls -la" --quiet
+python3 wp2shell-scanner.py --url https://wordpress.example -p --command "ls -la" --quiet
 ```
 
 Write only confirmed vulnerable results to JSON, or include every target with
