@@ -42,20 +42,34 @@ REQUEST_HEADERS = {
 }
 
 BANNER = r"""
-
                 ____      _          _ _ _ 
  __      ___ __|___ \ ___| |__   ___| | | |
  \ \ /\ / / '_ \ __) / __| '_ \ / _ \ | | |
   \ V  V /| |_) / __/\__ \ | | |  __/ | |_|
    \_/\_/ | .__/_____|___/_| |_|\___|_|_(_)
           |_|                              
+
               WordPress wp2shell scanner
-                by @sakibulalikhan • Hiddeninvestigations.Net
+              by @sakibulalikhan • Hiddeninvestigations.Net
                 
 """
 
 _PRINT_LOCK = threading.Lock()
 _NO_COLOR = False
+BANNER_COLORS = (
+    Fore.BLUE,
+    Fore.CYAN,
+)
+
+
+class SpacedHelpFormatter(argparse.RawDescriptionHelpFormatter):
+    """Keep the existing help layout while separating individual options."""
+
+    def add_arguments(self, actions: list[argparse.Action]) -> None:
+        for index, action in enumerate(actions):
+            if index:
+                self._add_item(lambda: "\n", ())
+            self.add_argument(action)
 
 
 def init_colors() -> None:
@@ -104,14 +118,25 @@ def emit(level: str, message: str, *, stream: TextIO | None = None) -> None:
 
 
 def print_banner(*, stream: TextIO | None = None) -> None:
-    """Print the tool banner in blue."""
+    """Print the tool banner with a colored line-by-line gradient."""
     active_stream = stream or sys.stdout
+    enabled = colors_enabled(active_stream)
+    color_index = 0
+    lines: list[str] = []
+    for line in BANNER.rstrip().splitlines():
+        if line.strip():
+            color = BANNER_COLORS[color_index % len(BANNER_COLORS)]
+            lines.append(colorize(line, color, enabled=enabled))
+            color_index += 1
+        else:
+            lines.append(line)
     with _PRINT_LOCK:
         print(
-            colorize(BANNER.rstrip(), Fore.BLUE, enabled=colors_enabled(active_stream)),
+            "\n".join(lines),
             file=active_stream,
             flush=True,
         )
+        print(file=active_stream, flush=True)
 
 
 def normalize_url(value: str) -> str:
@@ -1134,7 +1159,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="wp2shell-scanner",
         description="Detect the WordPress wp2shell vulnerability chain.",
         epilog=DISCLAIMER,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=SpacedHelpFormatter,
     )
     target_options = parser.add_argument_group("Target options")
     targets = target_options.add_mutually_exclusive_group(required=True)
